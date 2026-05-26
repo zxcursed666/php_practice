@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Question;
 use App\Models\Result;
 use Illuminate\Http\Request;
+use App\Models\Answer;
 
 class QuestionController extends Controller
 {
@@ -23,9 +24,26 @@ class QuestionController extends Controller
 
         foreach ($questions as $question) {
 
-            $userAnswer = $request->input('question_' . $question->id);
+            $selectedAnswers = $request->input('question_' . $question->id);
 
-            if ($userAnswer == $question->correct_answer) {
+            if (!$selectedAnswers) {
+                continue;
+            }
+
+            if (!is_array($selectedAnswers)) {
+                $selectedAnswers = [$selectedAnswers];
+            }
+
+            sort($selectedAnswers);
+
+            $correctAnswers = $question->answers
+                ->where('is_correct', 1)
+                ->pluck('id')
+                ->toArray();
+
+            sort($correctAnswers);
+
+            if ($selectedAnswers == $correctAnswers) {
                 $score++;
             }
         }

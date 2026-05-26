@@ -7,59 +7,58 @@
         </h1>
 
         <form method="POST" action="/quiz" id="quizForm">
-
             @csrf
 
             @foreach($questions as $question)
 
-                <div class="mb-6 p-6 bg-white border border-gray-300 rounded-2xl shadow-lg hover:shadow-2xl transition duration-300">
+            @php
 
-                    <h2 class="text-xl font-semibold mb-4">
-                        {{ $question->question }}
-                    </h2>
+            $correctCount = $question->answers
+            ->where('is_correct', 1)
+            ->count();
 
-                    <div class="mb-3">
+            $inputType = $correctCount > 1
+            ? 'checkbox'
+            : 'radio';
 
-                        <input
-                            type="radio"
-                            name="question_{{ $question->id }}"
-                            value="a"
-                        >
+            $inputName = $correctCount > 1
+            ? 'question_'.$question->id.'[]'
+            : 'question_'.$question->id;
 
-                        {{ $question->option_a }}
+            @endphp
 
-                    </div>
+            <div
+                data-question-block
+                class="mb-3 p-6 bg-white border border-gray-300 rounded-2xl shadow-lg hover:shadow-2xl transition duration-300">
 
-                    <div class="mb-3">
+                <h2 class = mb-4>
+                    {{ $question->question }}
+                </h2>
 
-                        <input
-                            type="radio"
-                            name="question_{{ $question->id }}"
-                            value="b"
-                        >
+                @foreach($question->answers as $answer)
 
-                        {{ $question->option_b }}
+                <div class="mb-4">
 
-                    </div>
+                    <input
+                        type="{{ $inputType }}"
+                        name="{{ $inputName }}"
+                        value="{{ $answer->id }}"
+                        class="answer-checkbox"
+                        data-limit="{{ $correctCount }}"
+                        data-question="{{ $question->id }}">
 
-                    <div class="mb-3">
-
-                        <input
-                            type="radio"
-                            name="question_{{ $question->id }}"
-                            value="c"
-                        >
-
-                        {{ $question->option_c }}
-
-                    </div>
+                    {{ $answer->answer_text }}
 
                 </div>
 
+                @endforeach
+
+            </div>
+
             @endforeach
 
-            <button class="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow">
-                    Submit
+            <button class="bg-white hover:bg-gray-100 text-gray-800 font-semibold py-3 px-16 border border-gray-400 rounded shadow">
+                Submit
             </button>
 
         </form>
@@ -68,25 +67,55 @@
 
     <script>
         document.getElementById('quizForm').addEventListener('submit', function(event) {
-            const totalQuestions = 10;
+
+            const questions = document.querySelectorAll('[data-question-block]');
 
             let answered = 0;
 
-            for(let i = 1; i <= totalQuestions; i++) {
-                const checked = document.querySelector('input[name="question_' + i + '"]:checked');
+            questions.forEach(question => {
 
-                if(checked) {
+                const checked = question.querySelectorAll('input:checked');
+
+                if (checked.length > 0) {
                     answered++;
                 }
-            }
 
-            if(answered < totalQuestions) {
+            });
+
+            if (answered < questions.length) {
+
                 event.preventDefault();
 
                 alert('Дайте відповіді на всі запитання');
 
             }
-        });
 
+        });
+    </script>
+
+    <script>
+        document.querySelectorAll('.answer-checkbox').forEach(input => {
+
+            input.addEventListener('change', function() {
+
+                if (this.type !== 'checkbox') return;
+
+                const questionId = this.dataset.question;
+
+                const limit = parseInt(this.dataset.limit);
+
+                const checked = document.querySelectorAll(
+                    'input[data-question="' + questionId + '"]:checked'
+                );
+
+                if (checked.length > limit) {
+
+                    this.checked = false;
+
+                }
+
+            });
+
+        });
     </script>
 </x-app-layout>
