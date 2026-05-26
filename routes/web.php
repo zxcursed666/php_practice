@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\ResultController;
+use Illuminate\Support\Facades\Auth;
 
 Route::get('/', function () {
     return view('welcome');
@@ -25,7 +26,17 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::get('/results', [ResultController::class, 'index'])
-    ->middleware('auth');
+Route::get('/results', function () {
 
-require __DIR__.'/auth.php';
+    if (!Auth::user()->is_admin) {
+
+        return redirect('/dashboard')
+            ->with('error', 'Користувач не має доступу до цієї сторінки');
+
+    }
+
+    return app(\App\Http\Controllers\ResultController::class)->index();
+
+})->middleware(['auth'])->name('results');
+
+require __DIR__ . '/auth.php';
